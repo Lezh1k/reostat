@@ -20,7 +20,8 @@ BIN_DIR = bin
 
 #device and program
 PRG = reostat
-MMCU = -mmcu=attiny2313
+MCU=mcu=attiny2313
+MMCU = -m$(MCU)
 
 OPTIMIZE = -Os
 INCLUDES = -Iinclude 
@@ -28,15 +29,14 @@ INCLUDES = -Iinclude
 CFLAGS = $(INCLUDES) $(MMCU) $(OPTIMIZE) $(DEFS) -ffunction-sections -fdata-sections -fpack-struct -fshort-enums -std=gnu99 \
   -Wl,--start-group  -Wl,--end-group -Wl,--gc-sections
 ASFLAGS = -f coff
-
-LDFLAGS = -Wl,-Map,$(BIN_DIR)/$(PRG).map $(MMCU) -Wl,-print-memory-usage
+LDFLAGS = -Wl,-Map,$(BIN_DIR)/$(PRG).map $(MMCU) 
 
 SOURCES = $(wildcard $(SRC_DIR)/*.c)
 OBJECTS_C = $(patsubst %,$(BUILD_DIR)/%.o, $(subst src/,,$(subst .c,,$(SOURCES))))
 OBJECTS_AS = $(patsubst %,$(BUILD_DIR)/%.o, $(subst src/,,$(subst .s,,$(SOURCES))))
 
 all: directories $(PRG) 
-$(PRG): $(BIN_DIR)/$(PRG).elf $(BIN_DIR)/lst $(BIN_DIR)/text 
+$(PRG): $(BIN_DIR)/$(PRG).elf $(BIN_DIR)/lst $(BIN_DIR)/text print_size 
 
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.c
 	$(CC) -Wall $(CFLAGS) -c $< -o $@
@@ -60,6 +60,9 @@ $(BIN_DIR)/bin: $(BIN_DIR)/$(PRG).bin
 $(BIN_DIR)/%.bin: $(BIN_DIR)/%.elf
 	$(OBJCOPY) -O binary $< $@
 
+print_size:
+	$(SIZE) -C --$(MCU) $(BIN_DIR)/$(PRG).elf
+
 directories:
 	@mkdir -p $(BUILD_DIR)
 	@mkdir -p $(BIN_DIR)
@@ -76,4 +79,4 @@ program:
 	@avrdude -c usbasp -p t2313 -U flash:w:$(BIN_DIR)/$(PRG).hex
 
 fuse_program:
-	@avrdude -c usbasp -p t2313 -U lfuse:w:0xde:m -U hfuse:w:0xdf:m -U efuse:w:0xfe:m 
+	@avrdude -c usbasp -p t2313 -U lfuse:w:0x64:m -U hfuse:w:0xdf:m -U efuse:w:0xfe:m 

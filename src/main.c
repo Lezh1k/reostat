@@ -40,14 +40,37 @@ static void printThermistorTable() {
 #include "lcd16x2.h"
 #include "commons.h"
 
-static const char CurrentTempStr[] PROGMEM  = "Curr. t: ";
-static const char DestTempStr[] PROGMEM     = "Dest. t: ";
+#define FLASH_PAGE_SIZE_W 16
+#define FLASH_PAGE_SIZE_B FLASH_PAGE_SIZE_W*2
+
+static const char CurrentTempStr[] __attribute__((__progmem__, section(".destt"), aligned(FLASH_PAGE_SIZE_B)))  = "Curr. t: ";
+static const char DestTempStr[] __attribute__((__progmem__, section(".destt"), aligned(FLASH_PAGE_SIZE_B))) = "Dest. t: ";
+//static uint16_t table[32] __attribute__((__progmem__, section(".destt"), aligned(FLASH_PAGE_SIZE_B)));
+
+static char pageBuff[] = "Temp. d:\0\0";
 
 int main() {  
+  uint16_t i ;
   lcd16x2_init();  
   lcd16x2_printStrPm(CurrentTempStr, LCD16X2_LINE0_ADDR, 0);
   lcd16x2_printStrPm(DestTempStr, LCD16X2_LINE1_ADDR, 0);  
+
+  cli();
+  // Perform page erase
+  boot_page_erase(DestTempStr);
+  // Wait until the memory is erased
+  boot_spm_busy_wait();
+
+  for (i = 0; i <= 8; i+=2) {
+    boot_page_fill(&DestTempStr[i], *((uint16_t*)&pageBuff[i]));
+  }
+
+  boot_page_write(DestTempStr);
+  boot_spm_busy_wait();
+
+  lcd16x2_printStrPm(DestTempStr, LCD16X2_LINE1_ADDR, 0);
   while (1) {
   }
+
   return 0;
 }

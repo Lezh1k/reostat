@@ -33,6 +33,7 @@ static void send(uint8_t val);
 static void sendCmd(uint8_t cmd);
 static void sendData(uint8_t data);
 static void setPos(uint8_t lineAddr, uint8_t pos);
+static void waitBF() __attribute__((used));
 
 static inline void prepareLcdOut() {
   LCD_DATA_PORT &= ~(LCD_OUT_D4 | LCD_OUT_D5 | LCD_OUT_D6 | LCD_OUT_D7);
@@ -66,7 +67,7 @@ static inline void setData() {
 }
 //////////////////////////////////////////////////////////////////////////
 
-static void waitBF() {
+void waitBF() {
   setRead();
   while (LCD_DATA_PIN & LCD_IN_D7)
     ;
